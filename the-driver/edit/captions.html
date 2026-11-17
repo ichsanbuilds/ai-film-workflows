@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="shared/kit.css">
+<style>
+  #cap { position: absolute; left: 60px; right: 60px; top: 1690px; text-align: center; font: 800 54px/1.2 Montserrat;
+    letter-spacing: -0.5px; text-shadow: 0 3px 14px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9); }
+</style></head>
+<body><div id="cap"></div>
+<script type="module">
+import words from './shared/words.js';
+import { boot } from './shared/kit.js';
+const groups = []; let g = [];
+words.forEach((w, i) => {
+  g.push(w);
+  const next = words[i + 1];
+  const punct = /[.,?!:]"?$/.test(w[0]);
+  if (punct || g.length >= 3 || !next || next[1] - w[2] > 0.5) { groups.push(g); g = []; }
+});
+groups.forEach((g, i) => {
+  const last = g[g.length - 1], nx = groups[i + 1];
+  g.start = g[0][1] - 0.05;
+  g.end = nx ? Math.min(nx[0][1] - 0.05, last[2] + 0.7) : last[2] + 1.2;
+});
+const cap = document.getElementById('cap');
+let shown = null;
+boot(86.6, t => {
+  const g = groups.find(g => t >= g.start && t < g.end);
+  if (g !== shown) { cap.innerHTML = g ? g.map(w => `<span>${w[0]}</span>`).join(' ') : ''; shown = g; }
+  if (!g) return;
+  const driver = (g[0][1] >= 17.6 && g[0][1] < 20.0) || (g[0][1] >= 35.9 && g[0][1] < 39.5);   // the gangsters' lines in orange italics
+  cap.style.fontStyle = driver ? 'italic' : 'normal';
+  [...cap.children].forEach((s, i) => {
+    const w = g[i], said = t >= w[1] - 0.02;
+    s.style.color = !said ? 'rgba(255,255,255,.42)' : driver ? '#ff9f1c' : w[3] ? '#ff4f8b' : '#fff';
+  });
+});
+</script></body></html>

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>The Driver Workflow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one reading column like a production notebook; each step = a "slate" with its tool, cost and output. Single dark noir look (matches the film), chosen on purpose. */
+:root {
+  --bg: #0c1416; --panel: #122124; --line: #23393d; --fg: #e4ecea; --muted: #94aaa7;
+  --teal: #5fb3b0; --amber: #f2b45a; --pink: #ff4f8b; --green: #3ccf91; --red: #ff3b5c;
+  --display: "Anton", "Impact", "Arial Narrow", sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.65 var(--body); }
+.wrap { max-width: 860px; margin: 0 auto; padding-block: 40px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font: 700 12px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--teal); }
+h1 { font: 400 clamp(54px, 11vw, 104px)/.92 var(--display); letter-spacing: .5px; margin: 14px 0 18px; text-wrap: balance; text-transform: uppercase; }
+h1 em { font-style: normal; color: var(--pink); }
+h2 { font: 400 clamp(30px, 6vw, 44px)/1 var(--display); text-transform: uppercase; letter-spacing: .5px; margin: 0; text-wrap: balance; }
+h3 { font: 700 15px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--amber); margin: 26px 0 8px; }
+p { margin: 0 0 14px; max-width: 65ch; }
+.lead { font-size: 18px; color: var(--fg); max-width: 60ch; }
+a { color: var(--teal); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 28px 0 10px; }
+.stats div { background: var(--panel); padding: 14px 16px; min-width: 0; }
+.stats b { display: block; font: 400 30px/1.1 var(--display); color: var(--fg); font-variant-numeric: tabular-nums; }
+.stats span { font: 400 12px/1.3 var(--mono); color: var(--muted); letter-spacing: .04em; }
+.slate { border-top: 1px solid var(--line); padding-top: 34px; margin-top: 46px; }
+.slate-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px; margin-bottom: 14px; }
+.take { font: 700 13px/1 var(--mono); color: var(--bg); background: var(--amber); border-radius: 4px; padding: 6px 8px; letter-spacing: .08em; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
+.meta span { font: 400 12px/1 var(--mono); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; color: var(--muted); }
+.meta span b { color: var(--fg); font-weight: 700; }
+figure { margin: 18px 0; }
+figure img { display: block; width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+figcaption { font: 400 12px/1.5 var(--mono); color: var(--muted); margin-top: 8px; }
+.prompt { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); margin: 10px 0; min-width: 0; }
+.ph { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.ph span { font: 700 12px/1 var(--mono); letter-spacing: .08em; color: var(--teal); text-transform: uppercase; }
+.copy { font: 700 12px/1 var(--mono); background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+.copy:hover { border-color: var(--teal); }
+.copy.done { color: var(--green); border-color: var(--green); }
+pre { margin: 0; padding: 12px 14px; white-space: pre-wrap; word-break: break-word; font: 400 13px/1.6 var(--mono); color: var(--fg); max-height: 360px; overflow: auto; }
+.scenes .prompt pre { max-height: none; }
+ul.tight { margin: 0 0 14px; padding-left: 20px; max-width: 65ch; }
+ul.tight li { margin: 4px 0; }
+.note { border-left: 3px solid var(--pink); padding: 4px 0 4px 14px; color: var(--fg); margin: 16px 0; max-width: 65ch; }
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 18px; }
+.tool { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; background: var(--panel); min-width: 0; }
+.tool b { display: block; font: 400 22px/1.1 var(--display); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.tool span { font-size: 14px; color: var(--muted); display: block; margin-bottom: 8px; }
+.tool a { font: 400 12px/1.4 var(--mono); word-break: break-all; }
+footer { margin-top: 60px; border-top: 1px solid var(--line); padding-top: 24px; font: 400 13px/1.6 var(--mono); color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Workflow · AI short film · 9:16</div>
+  <h1>The Driver:<br><em>how it was made</em></h1>
+  <p class="lead">An 86-second crime story where you, the viewer, make the call. No camera and no animator: every image, the voice, the sound and the edit came from AI tools, directed by one person with an AI coding agent. Below is the full pipeline, the real costs, the failures, and every prompt.</p>
+
+  <div class="stats">
+    <div><b>86.6 s</b><span>final length</span></div>
+    <div><b>1</b><span>AI video clip, the rest is layered stills</span></div>
+    <div><b>40+</b><span>moving layers, cut-outs and variants</span></div>
+    <div><b>180</b><span>Dreamina credits, tests and redos included</span></div>
+  </div>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 1</span><h2>The tools</h2></div>
+    <div class="tools">
+      <div class="tool"><b>Claude Code</b><span>The AI agent that wrote the script and the prompts, drove the image tool, and built the edit as code.</span><a href="https://claude.com/claude-code">claude.com/claude-code</a></div>
+      <div class="tool"><b>Dreamina</b><span>All images. Model Seedream 4.7, 2K, 9:16, image-to-image with reference pictures.</span><a href="https://dreamina.capcut.com">dreamina.capcut.com</a></div>
+      <div class="tool"><b>ElevenLabs</b><span>The narrator. Library voice "Kyle", one continuous take, word timestamps.</span><a href="https://elevenlabs.io">elevenlabs.io</a></div>
+      <div class="tool"><b>Mixkit</b><span>Free sound effects: police siren, rain on a car, heartbeat, car door.</span><a href="https://mixkit.co/free-sound-effects/">mixkit.co/free-sound-effects</a></div>
+      <div class="tool"><b>OpenFilm</b><span>Open-source editor where the film is web pages driven by time. Renders the MP4.</span><a href="https://github.com/openfilm/openfilm">github.com/openfilm/openfilm</a></div>
+    </div>
+  </section>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 2</span><h2>The script</h2></div>
+    <p>The format is "what would you do": second person, one ordinary situation that turns criminal, a twist right before the end, and a choice the viewer answers in the comments. Write it for the ear. Short sentences, and every line should be something you can show.</p>
+    <ul class="tight">
+      <li>Hook in the first two seconds: a time and a tired person ("It's 2:14 AM").</li>
+      <li>Raise the stakes three times: the bag, the sirens, the $50,000.</li>
+      <li>Twist: the man in the back seat has a police badge.</li>
+      <li>End on a binary choice: DRIVE or STOP.</li>
+    </ul>
+    <div class="prompt"><div class="ph"><span>Narration, recorded in one take</span><button type="button" class="copy" data-for="p-script">Copy</button></div><pre id="p-script">It&#x27;s two fourteen A.M. You&#x27;ve been driving for eleven hours. One more ride, and you&#x27;re done.
+
+The pickup is outside a bank. Three men in suits. One heavy black bag.
+
+They don&#x27;t put it in the trunk. They keep it on their laps.
+
+The guy behind you says one thing: &quot;Just drive. Don&#x27;t look back.&quot;
+
+You pull out. Two blocks later, you hear it. Sirens. Far behind you... but getting closer.
+
+You check the mirror. The big man in the middle opens the bag. Cash. Stacks of it.
+
+He drops five bricks on your passenger seat. &quot;That&#x27;s fifty thousand. Keep driving, and it&#x27;s yours.&quot;
+
+Fifty thousand dollars. That&#x27;s every bill you owe. That&#x27;s three years of rent.
+
+The sirens are louder now. Red and blue fill your mirror.
+
+Your phone buzzes. Rider changed destination. The new stop: an empty parking lot by the river.
+
+Then you see it. The man behind you leans forward, and his jacket falls open. Clipped to his belt... is a police badge.
+
+A dirty cop? Or a setup?
+
+If you stop now... who scares you more? The cops behind you... or the cop inside your car?
+
+The light turns green. The sirens are one block away.
+
+Drive... or stop?
+
+Comment DRIVE, or STOP.</pre></div>
+  </section>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 3</span><h2>Lock the look first</h2></div>
+    <p>Before any scene, make two images that define the style. Every later prompt points at them, so all 19 scenes share one palette and one way of drawing faces.</p>
+    <figure><img src="img/style-ref.jpg" alt="Noir illustration of a rainy street with a bank, a man in a fedora, a taxi and police cars" loading="lazy"><figcaption>The style reference, which also became the X header.</figcaption></figure>
+    <div class="prompt"><div class="ph"><span>Style reference: the city street</span><button type="button" class="copy" data-for="p-header">Copy</button></div><pre id="p-header">Wide panoramic illustration of a rainy American city street at night seen from above at a low angle. On the right side, a yellow taxi speeds away with its trunk slightly open and a black duffel bag inside, two police cars with red and blue lights chasing far behind. In the middle, a dark bank building with one window lit, and a man in a fedora standing in the shadow of an alley watching. Left side is calm dark empty wet street with soft teal fog. Thick clean black outlines, flat cel shading, muted teal night palette, warm amber streetlights, neon pink and red-blue reflections on wet asphalt, cinematic noir mood, subtle film grain, no text, no letters, no logos.</pre></div>
+    <div class="prompt"><div class="ph"><span>Style reference: the man in the fedora</span><button type="button" class="copy" data-for="p-avatar">Copy</button></div><pre id="p-avatar">Square avatar illustration, close-up head and shoulders of a simple cartoon man with a round pale white face, short black hair, worried side glance, wearing a dark fedora hat and a black suit with a loosened tie, holding a small black duffel bag strap on his shoulder. Centered, large in frame, plain dark teal background with a soft warm amber rim light from one side and a faint neon pink glow on the other. Thick clean black outlines, flat cel shading, noir crime mood, subtle film grain, no text, no letters, no logo.</pre></div>
+  </section>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 4</span><h2>Lock the characters</h2></div>
+    <p>Generate each recurring character once, then pass that image as a reference in every scene. Repeating a text description is not enough to keep a face the same.</p>
+    <div class="meta"><span>Seedream 4.7 · <b>4 credits</b></span><span>Seedream 5.5 · <b>16 credits</b></span></div>
+    <figure><img src="img/driver-test.jpg" alt="Two versions of a tired driver at the wheel, Seedream 4.7 on the left and 5.5 on the right" loading="lazy"><figcaption>Same prompt, two models. 4.7 (left) matched the style better and cost a quarter as much. It did draw rain inside the car, which the prompt now forbids.</figcaption></figure>
+    <div class="prompt"><div class="ph"><span>Driver character test</span><button type="button" class="copy" data-for="p-k1">Copy</button></div><pre id="p-k1">Flat noir illustration in exactly the art style of [STYLE REF]: clean flat shapes, thin dark outlines, muted teal night palette, warm amber streetlight, small neon pink and red-blue accents, subtle grain. Draw faces like [AVATAR REF] (pale flat skin, simple black brows and eyes, sharp profile lines) but do NOT copy his hat or suit. Main character: a tired American rideshare driver in his early 30s, short messy dark brown hair, light stubble, dark circles under his eyes, grey hoodie under an open olive-green bomber jacket. Shot: medium close-up from the passenger seat at night, he sits behind the steering wheel of a sedan, both hands on the wheel, rain drops on the windshield, warm amber streetlight across his face, teal shadows, a phone mounted on the dashboard glowing with a rideshare map. Vertical 9:16 composition, character centered in the middle third. No text, no letters, no logos, no watermark.</pre></div>
+    <figure><img src="img/gang.jpg" alt="Three gangsters in suits: a leader in a fedora, a bald man with a mustache holding a bag, a young blond man in gloves" loading="lazy"><figcaption>The gang lineup, used as one reference image for all three men.</figcaption></figure>
+    <div class="prompt"><div class="ph"><span>Gang lineup</span><button type="button" class="copy" data-for="p-m1">Copy</button></div><pre id="p-m1">Flat noir illustration in exactly the art style of [STYLE REF]: clean flat shapes, thin dark outlines, muted teal palette, warm amber light, subtle grain. Character lineup of three gangsters standing side by side, full body, front view, plain dark teal background, even lighting. LEFT: the man from [AVATAR REF], the leader, sharp profile face, black fedora, black suit, white shirt, black tie, calm and cold. MIDDLE: a heavy-set bald man in his 50s with a thin mustache, charcoal pinstripe suit, no hat, holding a black leather duffel bag. RIGHT: a young lanky man in his 20s, slicked-back blond hair, navy suit, black leather gloves, nervous eyes. No text, no letters, no logos, no watermark.</pre></div>
+  </section>
+
+  <section class="slate scenes">
+    <div class="slate-head"><span class="take">STEP 5</span><h2>Generate the scenes</h2></div>
+    <p>Every scene prompt is the same shared prefix, one scene line, and the same shared ending. [DRIVER] and [GANG] stand for the full character descriptions plus their reference image. Two scenes were free: the bank is a crop of the style reference, and the hands on the wheel come from the driver test.</p>
+    <figure><img src="img/all-scenes.jpg" alt="Contact sheet of all 18 scene images" loading="lazy"><figcaption>All scenes. 17 generated at 4 credits each = 68 credits.</figcaption></figure>
+    <div class="prompt"><div class="ph"><span>Shared prefix (every scene starts with this)</span><button type="button" class="copy" data-for="p-style">Copy</button></div><pre id="p-style">Flat noir illustration in exactly the art style of [STYLE REF]: clean flat shapes, thin dark outlines, muted teal night palette, warm amber streetlights, small neon pink and red-blue accents, subtle grain, cinematic framing.</pre></div>
+    <div class="prompt"><div class="ph"><span>Shared ending (every scene ends with this)</span><button type="button" class="copy" data-for="p-end">Copy</button></div><pre id="p-end">Rain only outside the car glass, never inside the car. Vertical 9:16, main subject in the middle third. No text, no letters, no numbers, no logos, no watermark.</pre></div>
+    <div class="prompt"><div class="ph"><span>D1</span><button type="button" class="copy" data-for="p-d1">Copy</button></div><pre id="p-d1">[DRIVER] Close-up inside a car at night: a smartphone in a dashboard mount glowing with a rideshare map, above it the rear-view mirror reflects the driver&#x27;s tired half-closed eyes.</pre></div>
+<div class="prompt"><div class="ph"><span>D2</span><button type="button" class="copy" data-for="p-d2">Copy</button></div><pre id="p-d2">High-angle wide shot of a lone dark sedan driving down an empty rainy American city street at night, wet asphalt reflecting amber streetlights, tall dark buildings.</pre></div>
+<div class="prompt"><div class="ph"><span>D4</span><button type="button" class="copy" data-for="p-d4">Copy</button></div><pre id="p-d4">[GANG] The three men walk out of a dark bank doorway in the rain toward the camera, seen through the wet passenger window of a car; amber street lamp, puddles.</pre></div>
+<div class="prompt"><div class="ph"><span>D5</span><button type="button" class="copy" data-for="p-d5">Copy</button></div><pre id="p-d5">[GANG] View from the driver seat looking back into the back seat: the three men squeezed side by side, the black leather bag held on their laps, dim cabin light, rainy window behind them.</pre></div>
+<div class="prompt"><div class="ph"><span>D6</span><button type="button" class="copy" data-for="p-d6">Copy</button></div><pre id="p-d6">[DRIVER] [GANG] Close-up: the leader leans forward from the back seat close to the driver&#x27;s ear, fedora shadow over his eyes; the driver in the foreground stares ahead, tense, gripping the wheel.</pre></div>
+<div class="prompt"><div class="ph"><span>D8</span><button type="button" class="copy" data-for="p-d8">Copy</button></div><pre id="p-d8">Car interior seen from the front passenger seat turned toward the rear: exactly three men from [GANG REF] sit side by side INSIDE the back seat (leader in black fedora, heavy bald man with mustache holding the black leather bag on his lap, young blond man with black gloves). Through the rear window behind their heads, far down the rainy street, tiny red and blue police lights.  (v2, the first version failed)</pre></div>
+<div class="prompt"><div class="ph"><span>D9</span><button type="button" class="copy" data-for="p-d9">Copy</button></div><pre id="p-d9">[GANG] Close-up of a car rear-view mirror; in the reflection the heavy bald man opens the black leather bag, revealing thick stacks of hundred-dollar bills.</pre></div>
+<div class="prompt"><div class="ph"><span>D10</span><button type="button" class="copy" data-for="p-d10">Copy</button></div><pre id="p-d10">Close-up of a car passenger seat at night: five thick bricks of hundred-dollar bills with paper bands dropped on the seat, a hand in a dark pinstripe sleeve letting go of the last one, amber light from outside.</pre></div>
+<div class="prompt"><div class="ph"><span>D11</span><button type="button" class="copy" data-for="p-d11">Copy</button></div><pre id="p-d11">[DRIVER] Close-up of the driver&#x27;s face, sweat on his forehead, eyes wide, staring down to the side at something on the passenger seat, warm amber light on one side, teal shadow on the other.</pre></div>
+<div class="prompt"><div class="ph"><span>D12</span><button type="button" class="copy" data-for="p-d12">Copy</button></div><pre id="p-d12">[DRIVER] Close-up of the car rear-view mirror flooded with flashing red and blue police light, the driver&#x27;s frightened eyes reflected in it.</pre></div>
+<div class="prompt"><div class="ph"><span>D13</span><button type="button" class="copy" data-for="p-d13">Copy</button></div><pre id="p-d13">Close-up of a smartphone in a car dashboard mount at night, the screen shows a map with a route line ending at a pin beside a dark river, a notification banner at the top made of simple shapes only.</pre></div>
+<div class="prompt"><div class="ph"><span>D14</span><button type="button" class="copy" data-for="p-d14">Copy</button></div><pre id="p-d14">[GANG] Extreme close-up of the leader&#x27;s waist as he leans forward in the back seat: his black suit jacket falls open, revealing a gold police badge clipped to his leather belt, low amber light.</pre></div>
+<div class="prompt"><div class="ph"><span>D15</span><button type="button" class="copy" data-for="p-d15">Copy</button></div><pre id="p-d15">Split composition: left half a gold police badge on dark cloth, right half thick stacks of hundred-dollar bills, divided by a sharp vertical beam of red and blue light.</pre></div>
+<div class="prompt"><div class="ph"><span>D16</span><button type="button" class="copy" data-for="p-d16">Copy</button></div><pre id="p-d16">Over-the-shoulder shot from just behind the driver&#x27;s head inside a car: the driver from [DRIVER REF] (messy dark brown hair, olive-green jacket) grips the steering wheel. At the top center, the rear-view mirror shows only the cold eyes and black fedora of the leader from [GANG REF], sitting in the back seat. Red and blue police light flashes across the mirror and the car ceiling. Only these two people.  (v2, the first version failed)</pre></div>
+<div class="prompt"><div class="ph"><span>D17</span><button type="button" class="copy" data-for="p-d17">Copy</button></div><pre id="p-d17">Rainy empty city intersection at night, a traffic light turning green, wet road reflections in green and amber, the dark hood of a sedan in the foreground.</pre></div>
+<div class="prompt"><div class="ph"><span>D18</span><button type="button" class="copy" data-for="p-d18">Copy</button></div><pre id="p-d18">Side close-up of a car footwell at night: a gas pedal and a brake pedal side by side, the driver&#x27;s right foot in a white sneaker hovering in the air between the two pedals, not touching either one, dim light, red and blue light flickering on the floor mat.  (v2, the first version failed)</pre></div>
+<div class="prompt"><div class="ph"><span>D19</span><button type="button" class="copy" data-for="p-d19">Copy</button></div><pre id="p-d19">Wide shot from behind a dark sedan stopped at a green traffic light at an empty rainy intersection at night, red and blue police lights approaching far behind, amber streetlights.</pre></div>
+  </section>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 6</span><h2>Check every image</h2></div>
+    <p>Three of 17 came back wrong. Read each image for what the story needs, not just whether it looks good.</p>
+    <figure><img src="img/fails.jpg" alt="Four failed scenes: men standing outside the car, a misplaced foot" loading="lazy"><figcaption>Fails: the men stand outside the car instead of in the back seat, one shot has four men, and the foot is nowhere near the pedals.</figcaption></figure>
+    <figure><img src="img/fixed.jpg" alt="Fixed versions: men inside the back seat, eyes in the mirror, foot between the pedals" loading="lazy"><figcaption>Fixes: say where people are ("INSIDE the back seat"), how many ("only these two people"), and what a body part is doing. 3 redos = 12 credits.</figcaption></figure>
+  </section>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 7</span><h2>Make layers that can move</h2></div>
+    <p>The first edit only zoomed into still images, and it looked like a slideshow. What makes this style work is that things in the picture move on their own. So each key moment gets three kinds of extra material.</p>
+    <h3>Cut-out objects</h3>
+    <p>Put several objects on one sheet over a flat magenta background, then key the magenta out and split the sheet into separate transparent files. One generation gives you six objects. Use magenta, not green: green screen eats the dollar bills.</p>
+    <figure><img src="img/sheet.jpg" alt="Sheet of objects on magenta: a bag, an open bag of cash, a badge, a phone, a police car" loading="lazy"><figcaption>One 4-credit sheet. The background came out darker than pure magenta, so the key colour was sampled from the image.</figcaption></figure>
+    <div class="prompt"><div class="ph"><span>Object sheet on magenta</span><button type="button" class="copy" data-for="p-sheet">Copy</button></div><pre id="p-sheet">Flat noir illustration in exactly the art style of [STYLE REF]: clean flat shapes, thin dark outlines, muted teal palette, warm amber light, subtle grain. A sheet of six separate objects in a 3x2 grid, each drawn large and centered in its cell: 1) a black leather doctor-style bag, closed, brass clasp; 2) the same black bag wide open and stuffed with stacks of hundred-dollar bills; 3) one thick brick of hundred-dollar bills with a white paper band, seen at a three-quarter angle; 4) a gold police badge shield; 5) a black smartphone seen from the front, its screen completely blank flat dark gray; 6) a black and white American police car seen from the front, red and blue roof lights glowing. Perfectly flat uniform pure magenta background (#FF00FF), no ground, no floor, no cast shadows, no magenta or pink on any object, every object fully separated from the others with wide gaps of background between them, nothing cut off by the frame. No text, no letters, no logos.</pre></div>
+    <figure><img src="img/cutouts.jpg" alt="The objects and characters cut out on a dark background" loading="lazy"><figcaption>After keying: bag, open bag, badge with cash, phone, police car, badge, the driver tired and shocked, the leader pointing.</figcaption></figure>
+    <h3>Variants of the same frame</h3>
+    <p>Ask for the same image with one thing changed, then swap them on the word that changes the story: the jacket falls open, the bag opens, the light turns green, the driver blinks.</p>
+    <figure><img src="img/variants.jpg" alt="Pairs of variants: jacket closed and open with badge, bag closed and open in the mirror" loading="lazy"><figcaption>Closed then open, swapped on "falls open" and "opens the bag".</figcaption></figure>
+    <div class="prompt"><div class="ph"><span>Variant: same frame, one change</span><button type="button" class="copy" data-for="p-var">Copy</button></div><pre id="p-var">Keep EVERYTHING identical to [SCENE D14]: same composition, framing, camera angle, colors, lighting, style and people. Change ONLY this: the black suit jacket is buttoned and CLOSED, completely covering the belt; no badge visible.</pre></div>
+    <h3>One real AI clip for the money shot</h3>
+    <p>Only the cash drop is real video: Seedance 2.0 Mini, 4 seconds, 720p, first frame = the scene image. 32 credits. Trim the first frames, which come out brighter than the rest.</p>
+    <figure><img src="img/clip.jpg" alt="Frames from the AI clip: a hand stacking bricks of cash on a car seat" loading="lazy"><figcaption>Frames from the 4-second clip.</figcaption></figure>
+    <div class="prompt"><div class="ph"><span>Video clip (first frame = the cash scene)</span><button type="button" class="copy" data-for="p-clip">Copy</button></div><pre id="p-clip">Keep the exact flat noir illustration style, colors and outlines of the first frame. A hand in a dark pinstripe suit sleeve drops thick bricks of hundred-dollar bills onto the car passenger seat one by one; each brick lands with a small bounce and the paper bands flutter. Warm amber light from passing streetlights sweeps slowly across the seat, rain streaks run down the window outside. Static camera, no zoom, no cuts. No text, no new people.</pre></div>
+    <div class="meta"><span>Clip <b>32</b></span><span>2 sheets + 8 variants + 1 plate <b>44</b></span></div>
+  </section>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 8</span><h2>Voice in one take</h2></div>
+    <p>Record the whole narration at once rather than line by line, so the pacing stays natural. Then cut the picture to the voice.</p>
+    <div class="meta"><span>Voice <b>Kyle</b></span><span>Model <b>eleven_multilingual_v2</b></span><span>Stability <b>0.4</b></span><span>Style <b>0.25</b></span><span>~<b>1,140</b> characters</span></div>
+    <ul class="tight">
+      <li>Write numbers the way they should be said: "two fourteen A.M.", "fifty thousand".</li>
+      <li>Use the API's <code>with-timestamps</code> endpoint. You get the start time of every word, and that is what the edit is built on.</li>
+      <li>Check the take with a speech-to-text pass to catch misread words before you edit.</li>
+    </ul>
+  </section>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 9</span><h2>The edit: something moves every second</h2></div>
+    <p>Each scene is a web page that draws one moment in time, built in layers: the background plate, the cut-out objects, light, and graphics. Every layer has its own motion, and every change lands on a spoken word.</p>
+    <ul class="tight">
+      <li>Objects act: the bag drops in and bounces with a puff of dust, the leader slides in pointing ("JUST DRIVE."), the badge spins in with a shine across it, the police car grows from far away to filling the frame.</li>
+      <li>Variants swap on the word: blink, shock on "fifty thousand", bag open, jacket open, red to blue mirror, red to green light.</li>
+      <li>Graphics do work: a ride counter card, a pickup notification, a siren distance bar that fills, a phone that slides up and buzzes, a map that draws its own route to the river, cash counting up with "+$10,000" floating off each brick, BEHIND vs INSIDE cards.</li>
+      <li>Light keeps the cabin alive: warm streetlight bands sweep across the seats, red and blue grows as the sirens get closer, a heartbeat pulse before the twist.</li>
+      <li>Zoom is only seasoning, a slow push-in under all of the above.</li>
+    </ul>
+    <p class="note">Keep flashing light under 3 flashes per second. Saturated red flashing is the riskiest for photosensitive viewers. The first render switched red and blue 5 times a second (2.5 full flashes), close to the limit, so it was slowed to about 1.5 flashes a second and re-rendered.</p>
+  </section>
+
+  <section class="slate">
+    <div class="slate-head"><span class="take">STEP 10</span><h2>Sound and render</h2></div>
+    <ul class="tight">
+      <li>Layers: narration, a dark tension music bed, rain on the car the whole time, a siren that starts far and quiet and ends one block away, a car door at the pickup, a thud when the bag lands, five thumps for the cash bricks, whooshes as objects fly in, a phone buzz, a heartbeat before the twist, a hit on the badge.</li>
+      <li>Render: 1080 × 1920, 30 fps, sound normalised to −14 LUFS with true peaks under −1 dBTP.</li>
+    </ul>
+  </section>
+
+  <footer>Made by @ichsanbuilds on X. Copy any prompt and swap the story. If you make one, tag me.</footer>
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var pre = document.getElementById(b.dataset.for);
+    var text = pre.textContent;
+    function mark() { b.textContent = 'Copied'; b.classList.add('done'); setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('done'); }, 1600); }
+    function select() { var r = document.createRange(); r.selectNodeContents(pre); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected, press Ctrl+C'; }
+    try { navigator.clipboard.writeText(text).then(mark, select); } catch (e) { select(); }
+  });
+});
+</script>
+
+</body>
+</html>

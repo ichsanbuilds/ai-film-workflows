@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="shared/kit.css">
+<style>
+  #hud { position: absolute; left: 0; right: 0; top: 150px; display: flex; justify-content: center; gap: 12px; }
+  .it { display: flex; align-items: center; gap: 10px; background: rgba(8,12,14,.74); border: 2px solid rgba(255,255,255,.14);
+    border-radius: 12px; padding: 6px 14px; font: 700 24px SpaceMono, monospace; letter-spacing: 2px; }
+  .it i { font-style: normal; color: rgba(255,255,255,.55); font-size: 18px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: #3ccf91; }
+</style></head>
+<body>
+<div id="hud">
+  <div class="it"><span class="dot" id="d"></span><b id="clock">2:14 AM</b></div>
+  <div class="it" id="sr"><i>SIRENS</i><b id="dist" style="color:#ff3b5c">FAR</b></div>
+  <div class="it" id="cs"><i>SEAT</i><b style="color:#3ccf91">$50,000</b></div>
+</div>
+<script type="module">
+import { boot, seg, eo } from './shared/kit.js';
+const items = [...document.querySelectorAll('.it')];
+const clock = document.getElementById('clock'), sr = document.getElementById('sr'), cs = document.getElementById('cs'), dist = document.getElementById('dist'), d = document.getElementById('d');
+boot(86.6, t => {
+  items.forEach((el, i) => { const p = eo(seg(t, 0.3 + i * 0.12, 0.35)); el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * -30}px)`; });
+  sr.style.display = t >= 23.57 && t < 82.16 ? 'flex' : 'none';
+  dist.textContent = t < 46.1 ? 'FAR' : t < 77.97 ? 'CLOSE' : '1 BLOCK';
+  cs.style.display = t >= 34.04 && t < 82.16 ? 'flex' : 'none';
+  clock.textContent = t < 50 ? '2:14 AM' : '2:15 AM';
+  const hot = t >= 23.57; d.style.background = hot ? '#ff3b5c' : '#3ccf91'; d.style.opacity = hot && (Math.floor(t * 3) % 2) ? .3 : 1;
+});
+</script></body></html>
